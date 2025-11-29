@@ -11,60 +11,32 @@ def read_transcript(file_path: Path) -> str:
     return content
 
 
-def extract_metadata(transcript: str) -> dict:
+def process_transcript(file_path: Path) -> list[str]:
     """
-    Extracts participant metadata from an earnings-call transcript.
-
-    The function looks for lines in the transcript that follow a common
-    pattern used in earnings call docs, e.g.:
-
-        James Friedland - Senior Director of Investor Relations
-
-    It supports common dash characters ("-", "–", "—") and returns a
-    dictionary mapping participant names to their titles.
+    Processes a transcript file to extract relevant contents
 
     Args:
-        transcript: Full transcript text as a string.
+        file_path: Path to the transcript text file.
 
     Returns:
-        A dict where keys are participant names (str) and values are their
-        titles (str). If the same name appears multiple times, the first
-        occurrence is preserved.
+        A list of lines from the transcript omitting the metadata section and any titles.
     """
+    transcript = read_transcript(file_path)
+    res: list[str] = []
 
-    metadata: dict[str, str] = {}
-
-    # Match lines like: Name - Title  (supports -, – and —)
-    pattern = re.compile(r"^\s*([A-Z][A-Za-z\.'\- ]{1,200}?)\s*[-–—]\s*(.+?)\s*$")
-
+    punctuation = {".", "!", "?", ":", ";", ","}
     for line in transcript.splitlines():
-        # Stop processing the metadata section when we reach the main content
-        if line.startswith("Presentation"):
-            break
-
-        m = pattern.match(line)
-        if not m:
+        # Skip lines that don't end with punctuation. These are things like section
+        #   titles, headings, speaker, etc.
+        if not any(line.strip().endswith(p) for p in punctuation):
             continue
+        # Split the line on punctuation but don't match abbreviations and titles
+        parts = re.split(r"(?<!\b[A-Za-z])(?<!\bDr\.)(?<=[.!?])\s+(?=[A-Z])", line)
+        res.extend(parts)
 
-        name = m.group(1).strip()
-        title = m.group(2).strip()
-
-        # Basic sanity: discard lines where title looks like a company or
-        # short one-word tokens that are unlikely to be roles (optional).
-        if not name or not title:
-            continue
-
-        # Avoid overwriting if name already captured earlier in transcript
-        if name not in metadata:
-            metadata[name] = title
-
-    return metadata
+    return res
 
 
 if __name__ == "__main__":
     path = Path(".") / "transcripts" / "lly-2025-q3.txt"
-
-    transcript = read_transcript(path)
-    metadata = extract_metadata(transcript)
-    for name, title in metadata.items():
-        print(f"{name}: {title}")
+    process_transcript(path)
