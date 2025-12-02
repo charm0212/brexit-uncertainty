@@ -1,7 +1,7 @@
 import re
 from pathlib import Path
 
-BASE_DIR = Path(".") / "src"
+BASE_DIR = Path(__file__).parent
 TRANSCRIPT_DIR = BASE_DIR / "transcripts"
 PROCESSED_DIR = BASE_DIR / "processed"
 MONTH_LUT = {
