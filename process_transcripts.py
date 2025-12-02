@@ -42,7 +42,7 @@ def write_lines(file_path: Path, lines: list[str]) -> None:
         file_path: Path to the output text file.
         lines: List of lines to write to the file.
     """
-    PROCESSED_DIR.mkdir(exist_ok=True)
+    file_path.parent.mkdir(parents=True, exist_ok=True)
     with open(file_path, "w", encoding="utf-8") as f:
         for line in lines:
             f.write(line + "\n")
